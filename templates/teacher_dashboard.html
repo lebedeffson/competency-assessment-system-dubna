@@ -2,6 +2,35 @@
 
 {% block title %}Дашборд преподавателя{% endblock %}
 
+{% block extra_css %}
+<style>
+    .student-card--private {
+        border: 1px dashed #cbd5f5;
+        background: #f8fafc;
+    }
+    .student-username {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-success {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .badge-muted {
+        background: #e2e8f0;
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-container">
     <h1>Дашборд преподавателя</h1>
@@ -26,26 +55,40 @@
     </div>
     
     <div class="students-section">
-        <h2>Открытые профили студентов</h2>
-        {% if students %}
+        <h2>Профили студентов</h2>
+        {% if student_profiles %}
             <div class="students-grid">
-                {% for student in students %}
-                <div class="student-card">
-                    <h3>{{ student.full_name or student.username }}</h3>
+                {% for student in student_profiles %}
+                <div class="student-card{% if not student.profile_visibility %} student-card--private{% endif %}">
+                    <h3>{{ student.display_name }}</h3>
+                    <p class="student-username">@{{ student.username }}</p>
+                    <p><strong>Статус профиля:</strong>
+                        {% if student.profile_visibility %}
+                            <span class="badge badge-success">Открыт</span>
+                        {% else %}
+                            <span class="badge badge-muted">Закрыт студентом</span>
+                        {% endif %}
+                    </p>
                     {% if student.faculty %}<p><strong>Факультет:</strong> {{ student.faculty }}</p>{% endif %}
                     {% if student.course %}<p><strong>Курс:</strong> {{ student.course }}</p>{% endif %}
-                    {% if student.test_results %}
-                        <p><strong>Тестов пройдено:</strong> {{ student.test_results|length }}</p>
-                        {% if student.test_results|length > 0 %}
-                            <a href="{{ url_for('view_results', result_id=student.test_results[0].id) }}" class="btn btn-primary btn-small">Посмотреть последний результат</a>
+                    
+                    {% if student.results_count > 0 %}
+                        <p><strong>Тестов пройдено:</strong> {{ student.results_count }}</p>
+                        {% if student.last_result_date %}
+                            <p><strong>Последний тест:</strong> {{ student.last_result_date.strftime('%d.%m.%Y %H:%M') }}</p>
                         {% endif %}
+                        <a href="{{ url_for('view_results', result_id=student.last_result_id) }}" class="btn btn-primary btn-small">
+                            Просмотреть последний результат
+                        </a>
+                    {% else %}
+                        <p style="color: #666; margin-top: 1rem;">Студент ещё не проходил тестирование</p>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
         {% else %}
             <p style="text-align: center; color: #666; padding: 40px;">
-                Нет студентов с открытыми профилями
+                Пока нет зарегистрированных студентов
             </p>
         {% endif %}
     </div>

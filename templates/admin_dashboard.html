@@ -188,23 +188,24 @@
                 <div>
                     <strong>{{ question.text[:100] }}{% if question.text|length > 100 %}...{% endif %}</strong>
                     <br>
-                    <small>Компетенция: {{ competencies[question.competency]['name'] }} | Порядок: {{ question.order_num }} | {% if question.active %}Активен{% else %}Неактивен{% endif %}</small>
+                    <small>Компетенция: {{ competency_display_map[question.display_competency]['name'] }} | Порядок: {{ question.order_num }} | {% if question.active %}Активен{% else %}Неактивен{% endif %}</small>
                 </div>
                 <div>
-                    <button class="btn btn-secondary btn-small" onclick="editQuestion({{ question.id }})">Редактировать</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteQuestion({{ question.id }})">Удалить</button>
+                    <button class="btn btn-secondary btn-small edit-question-btn" data-question-id="{{ question.id }}">Редактировать</button>
+                    <button class="btn btn-danger btn-small delete-question-btn" data-question-id="{{ question.id }}">Удалить</button>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
     
-    <!-- Модальное окно для добавления вопроса -->
+    <!-- Модальное окно для добавления / редактирования вопроса -->
     <div id="questionModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeQuestionForm()">&times;</span>
-            <h2>Добавить новый вопрос</h2>
+            <h2 id="modalTitle">Добавить новый вопрос</h2>
             <form id="questionForm">
+                <input type="hidden" id="questionId">
                 <div class="form-group">
                     <label for="questionText">Текст вопроса *</label>
                     <textarea id="questionText" name="text" rows="3" required style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;"></textarea>
@@ -226,18 +227,7 @@
                 
                 <div class="form-group">
                     <label>Варианты ответов * (минимум 2)</label>
-                    <div id="optionsContainer">
-                        <div class="option-row">
-                            <input type="text" placeholder="Текст варианта" required>
-                            <input type="number" placeholder="Балл" min="1" max="5" value="1" required>
-                            <button type="button" class="remove-option" onclick="removeOption(this)" style="display: none;">Удалить</button>
-                        </div>
-                        <div class="option-row">
-                            <input type="text" placeholder="Текст варианта" required>
-                            <input type="number" placeholder="Балл" min="1" max="5" value="2" required>
-                            <button type="button" class="remove-option" onclick="removeOption(this)" style="display: none;">Удалить</button>
-                        </div>
-                    </div>
+                    <div id="optionsContainer"></div>
                     <button type="button" class="btn btn-secondary" onclick="addOption()" style="margin-top: 10px;">+ Добавить вариант</button>
                 </div>
                 
@@ -261,44 +251,136 @@
     </div>
 </div>
 
+<script type="application/json" id="questionsDataSource">
+    {{ questions_data|tojson|safe }}
+</script>
 <script>
-function showQuestionForm() {
-    document.getElementById('questionModal').style.display = 'block';
-    // Показываем кнопки удаления для всех вариантов кроме первых двух
-    const options = document.querySelectorAll('#optionsContainer .option-row');
-    options.forEach((row, index) => {
-        if (index >= 2) {
-            row.querySelector('.remove-option').style.display = 'block';
+const QUESTIONS_DATA = JSON.parse(document.getElementById('questionsDataSource').textContent || '[]');
+let editingQuestionId = null;
+
+function getQuestionDataById(id) {
+    for (let i = 0; i < QUESTIONS_DATA.length; i += 1) {
+        if (QUESTIONS_DATA[i].id === id) {
+            return QUESTIONS_DATA[i];
+        }
+    }
+    return null;
+}
+
+function createOptionRow(text = '', score = 1) {
+    const row = document.createElement('div');
+    row.className = 'option-row';
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.placeholder = 'Текст варианта';
+    textInput.required = true;
+    textInput.value = text || '';
+
+    const scoreInput = document.createElement('input');
+    scoreInput.type = 'number';
+    scoreInput.placeholder = 'Балл';
+    scoreInput.min = '1';
+    scoreInput.max = '5';
+    scoreInput.required = true;
+    scoreInput.value = (typeof score === 'number' && !isNaN(score)) ? score : 1;
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'remove-option';
+    removeButton.textContent = 'Удалить';
+    removeButton.onclick = function() {
+        removeOption(removeButton);
+    };
+
+    row.appendChild(textInput);
+    row.appendChild(scoreInput);
+    row.appendChild(removeButton);
+
+    return row;
+}
+
+function updateRemoveButtons() {
+    const container = document.getElementById('optionsContainer');
+    const rows = container.querySelectorAll('.option-row');
+    rows.forEach(function(row, index) {
+        const removeBtn = row.querySelector('.remove-option');
+        if (rows.length <= 2 && index < 2) {
+            removeBtn.style.display = 'none';
+        } else {
+            removeBtn.style.display = 'inline-block';
         }
     });
 }
 
+function renderOptions(options = []) {
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    if (!options.length) {
+        options = [
+            { text: '', score: 4 },
+            { text: '', score: 3 }
+        ];
+    }
+    for (let i = 0; i < options.length; i += 1) {
+        const opt = options[i];
+        container.appendChild(createOptionRow(opt.text || '', opt.score || 1));
+    }
+    updateRemoveButtons();
+}
+
+function showQuestionForm(questionId = null) {
+    editingQuestionId = questionId;
+    document.getElementById('questionModal').style.display = 'block';
+    
+    const title = document.getElementById('modalTitle');
+    const idInput = document.getElementById('questionId');
+    const form = document.getElementById('questionForm');
+    form.reset();
+    
+    if (questionId) {
+        title.textContent = 'Редактировать вопрос';
+        const question = getQuestionDataById(questionId);
+        if (!question) {
+            alert('Не удалось загрузить данные вопроса');
+            closeQuestionForm();
+            return;
+        }
+        idInput.value = questionId;
+        document.getElementById('questionText').value = question.text;
+        document.getElementById('questionCompetency').value = question.competency;
+        document.getElementById('questionOrder').value = question.order_num || '';
+        const optionsData = [];
+        for (let i = 0; i < question.options.length; i += 1) {
+            const opt = question.options[i];
+            optionsData.push({ text: opt.text, score: opt.score });
+        }
+        renderOptions(optionsData);
+    } else {
+        title.textContent = 'Добавить новый вопрос';
+        idInput.value = '';
+        renderOptions();
+    }
+}
+
 function closeQuestionForm() {
+    editingQuestionId = null;
     document.getElementById('questionModal').style.display = 'none';
     document.getElementById('questionForm').reset();
-    // Оставляем только 2 варианта
-    const container = document.getElementById('optionsContainer');
-    while (container.children.length > 2) {
-        container.removeChild(container.lastChild);
-    }
+    renderOptions();
 }
 
 function addOption() {
     const container = document.getElementById('optionsContainer');
-    const newRow = document.createElement('div');
-    newRow.className = 'option-row';
-    newRow.innerHTML = `
-        <input type="text" placeholder="Текст варианта" required>
-        <input type="number" placeholder="Балл" min="1" max="5" value="1" required>
-        <button type="button" class="remove-option" onclick="removeOption(this)">Удалить</button>
-    `;
-    container.appendChild(newRow);
+    container.appendChild(createOptionRow('', 1));
+    updateRemoveButtons();
 }
 
 function removeOption(button) {
     const container = document.getElementById('optionsContainer');
     if (container.children.length > 2) {
         button.parentElement.remove();
+        updateRemoveButtons();
     } else {
         alert('Должно быть минимум 2 варианта ответа');
     }
@@ -307,64 +389,73 @@ function removeOption(button) {
 // Закрытие модального окна при клике вне его
 window.onclick = function(event) {
     const modal = document.getElementById('questionModal');
-    if (event.target == modal) {
+    if (event.target === modal) {
         closeQuestionForm();
     }
 }
 
-document.getElementById('questionForm').addEventListener('submit', async (e) => {
+document.getElementById('questionForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const formData = {
-        text: document.getElementById('questionText').value,
-        competency: document.getElementById('questionCompetency').value,
-        order_num: document.getElementById('questionOrder').value ? parseInt(document.getElementById('questionOrder').value) : null,
-        options: []
-    };
-    
-    // Собираем варианты ответов
+    const options = [];
     const optionRows = document.querySelectorAll('#optionsContainer .option-row');
-    optionRows.forEach((row, index) => {
+    optionRows.forEach(function(row, index) {
         const inputs = row.querySelectorAll('input');
-        if (inputs[0].value.trim() && inputs[1].value) {
-            formData.options.push({
-                text: inputs[0].value.trim(),
-                score: parseInt(inputs[1].value),
+        const text = inputs[0].value.trim();
+        const score = parseInt(inputs[1].value, 10);
+        if (text && score) {
+            options.push({
+                text: text,
+                score: score,
                 order_num: index + 1
             });
         }
     });
     
-    if (formData.options.length < 2) {
+    if (options.length < 2) {
         alert('Добавьте минимум 2 варианта ответа');
         return;
     }
     
+    const payload = {
+        text: document.getElementById('questionText').value.trim(),
+        competency: document.getElementById('questionCompetency').value,
+        order_num: document.getElementById('questionOrder').value ? parseInt(document.getElementById('questionOrder').value, 10) : null,
+        options
+    };
+    
+    let method = 'POST';
+    if (editingQuestionId) {
+        method = 'PUT';
+        payload.id = editingQuestionId;
+    }
+    
     try {
         const response = await fetch('/admin/questions', {
-            method: 'POST',
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
         if (result.success) {
-            alert('Вопрос успешно добавлен!');
+            const successMessage = 'Вопрос успешно ' + (editingQuestionId ? 'обновлён' : 'добавлен') + '!';
+            alert(successMessage);
             closeQuestionForm();
             location.reload();
         } else {
-            alert('Ошибка: ' + (result.message || 'Не удалось добавить вопрос'));
+            alert('Ошибка: ' + (result.message || 'Не удалось сохранить вопрос'));
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Произошла ошибка при добавлении вопроса');
+        alert('Произошла ошибка при сохранении вопроса');
     }
 });
 
 function editQuestion(id) {
-    alert('Редактирование вопроса ' + id + '\n\nФункция редактирования будет реализована в следующей версии');
+    showQuestionForm(id);
 }
 
 function deleteQuestion(id) {
@@ -387,6 +478,31 @@ function deleteQuestion(id) {
         });
     }
 }
+
+function bindQuestionButtons() {
+    const editButtons = document.querySelectorAll('.edit-question-btn');
+    for (let i = 0; i < editButtons.length; i += 1) {
+        editButtons[i].addEventListener('click', function(event) {
+            const id = parseInt(event.currentTarget.getAttribute('data-question-id'), 10);
+            if (!isNaN(id)) {
+                editQuestion(id);
+            }
+        });
+    }
+    const deleteButtons = document.querySelectorAll('.delete-question-btn');
+    for (let j = 0; j < deleteButtons.length; j += 1) {
+        deleteButtons[j].addEventListener('click', function(event) {
+            const id = parseInt(event.currentTarget.getAttribute('data-question-id'), 10);
+            if (!isNaN(id)) {
+                deleteQuestion(id);
+            }
+        });
+    }
+}
+
+// Инициализация контейнера с опциями при загрузке
+renderOptions();
+bindQuestionButtons();
 </script>
 {% endblock %}
 

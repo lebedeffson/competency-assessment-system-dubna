@@ -223,10 +223,10 @@
         
         <form id="testForm">
             {% for question in questions %}
-            <div class="question-card" data-question-id="{{ question.id }}" {% if loop.first %}class="active"{% endif %}>
+            <div class="question-card{% if loop.first %} active{% endif %}" data-question-id="{{ question.id }}">
                 <div class="question-header">
                     <div class="question-number">Вопрос {{ loop.index }} / {{ questions|length }}</div>
-                    <div class="question-competency">{{ competencies[question.competency]['name'] }}</div>
+                    <div class="question-competency">{{ competency_display_map[question.display_competency]['name'] }}</div>
                 </div>
                 <div class="question-text">{{ question.text }}</div>
                 <div class="options">

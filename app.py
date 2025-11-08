@@ -50,63 +50,84 @@ class TestResult(db.Model):
     profile_data = db.Column(db.Text)  # JSON данные для визуализации
 
 # Модель надпрофессиональных компетенций
+# Объединены компетенции: problem_solving + digital_literacy -> critical_thinking
+# creativity -> critical_thinking (креативное решение проблем)
+# adaptability + self_regulation -> emotional_intelligence (адаптивность и саморегуляция)
 COMPETENCIES = {
     'critical_thinking': {
-        'name': 'Критическое мышление',
-        'description': 'Способность анализировать информацию, выявлять причинно-следственные связи и принимать обоснованные решения',
-        'career_fields': ['Аналитика', 'Исследования', 'Консалтинг', 'IT', 'Финансы', 'Юриспруденция']
+        'name': 'Критическое мышление и решение проблем',
+        'description': 'Способность анализировать информацию, выявлять причинно-следственные связи, принимать обоснованные решения, системно решать сложные задачи. Включает креативный подход к проблемам и цифровую грамотность',
+        'career_fields': ['Аналитика', 'Исследования', 'Консалтинг', 'IT', 'Финансы', 'Юриспруденция', 'Инжиниринг', 'Наука', 'Бизнес-аналитика', 'Data Science', 'Кибербезопасность', 'R&D', 'Продуктовая разработка']
     },
     'communication': {
         'name': 'Коммуникация',
         'description': 'Эффективное взаимодействие, способность ясно излагать мысли и работать в команде',
-        'career_fields': ['HR', 'Продажи', 'PR', 'Менеджмент', 'Журналистика', 'Образование']
-    },
-    'creativity': {
-        'name': 'Креативность',
-        'description': 'Генерация новых идей, нестандартное мышление и инновационный подход',
-        'career_fields': ['Маркетинг', 'Дизайн', 'R&D', 'Продуктовая разработка', 'Реклама', 'Искусство']
+        'career_fields': ['HR', 'Продажи', 'PR', 'Менеджмент', 'Журналистика', 'Образование', 'Маркетинг', 'Реклама']
     },
     'emotional_intelligence': {
-        'name': 'Эмоциональный интеллект',
-        'description': 'Понимание своих и чужих эмоций, эмпатия и управление межличностными отношениями',
-        'career_fields': ['Психология', 'Образование', 'Социальная работа', 'Управление', 'Медицина', 'Коучинг']
-    },
-    'adaptability': {
-        'name': 'Адаптивность',
-        'description': 'Гибкость мышления, способность быстро подстраиваться под изменения',
-        'career_fields': ['Стартапы', 'Проектный менеджмент', 'IT', 'Консалтинг', 'Торговля', 'Сервис']
+        'name': 'Эмоциональный интеллект и саморегуляция',
+        'description': 'Понимание своих и чужих эмоций, эмпатия, управление межличностными отношениями. Включает способность контролировать эмоции, адаптироваться к изменениям, стрессоустойчивость и мотивацию',
+        'career_fields': ['Психология', 'Образование', 'Социальная работа', 'Управление', 'Медицина', 'Коучинг', 'Стартапы', 'Проектный менеджмент', 'Высоконагруженные позиции', 'Руководство', 'Кризисное управление']
     },
     'time_management': {
-        'name': 'Управление временем',
-        'description': 'Планирование, приоритизация и эффективная организация рабочего процесса',
-        'career_fields': ['Управление проектами', 'Администрирование', 'Операционный менеджмент', 'Любая сфера']
+        'name': 'Управление временем и адаптивность',
+        'description': 'Планирование, приоритизация и эффективная организация рабочего процесса. Включает способность быстро адаптироваться к изменениям и управлять приоритетами',
+        'career_fields': ['Управление проектами', 'Администрирование', 'Операционный менеджмент', 'Любая сфера', 'Стартапы', 'IT', 'Консалтинг', 'Торговля', 'Сервис']
     },
     'teamwork': {
         'name': 'Командная работа',
         'description': 'Способность продуктивно работать в коллективе и достигать общих целей',
-        'career_fields': ['Любая сфера с командной работой', 'Спорт', 'Производство', 'Сервис']
-    },
-    'problem_solving': {
-        'name': 'Решение проблем',
-        'description': 'Системный подход к поиску решений сложных задач',
-        'career_fields': ['Инжиниринг', 'IT', 'Наука', 'Бизнес-аналитика', 'Консалтинг', 'Исследования']
-    },
-    'self_regulation': {
-        'name': 'Саморегуляция',
-        'description': 'Контроль эмоций, мотивация, стрессоустойчивость',
-        'career_fields': ['Высоконагруженные позиции', 'Руководство', 'Кризисное управление', 'Медицина', 'Спорт']
-    },
-    'digital_literacy': {
-        'name': 'Цифровая грамотность',
-        'description': 'Уверенное владение цифровыми инструментами и технологиями',
-        'career_fields': ['IT', 'Digital-маркетинг', 'Медиа', 'Data Science', 'Кибербезопасность', 'Любая современная сфера']
+        'career_fields': ['Любая сфера с командной работой', 'Спорт', 'Производство', 'Сервис', 'Менеджмент', 'HR']
     }
 }
+
+COMPETENCY_ALIASES = {
+    'creativity': 'critical_thinking',
+    'problem_solving': 'critical_thinking',
+    'digital_literacy': 'critical_thinking',
+    'self_regulation': 'emotional_intelligence',
+    'adaptability': 'time_management'
+}
+
+def resolve_competency_key(comp_key: str) -> str:
+    """Возвращает актуальный ключ компетенции с учётом исторических данных."""
+    return COMPETENCY_ALIASES.get(comp_key, comp_key)
+
+def get_competency_display_map() -> dict:
+    """Возвращает словарь для отображения компетенций (включая алиасы)."""
+    display_map = {key: value for key, value in COMPETENCIES.items()}
+    for alias, target in COMPETENCY_ALIASES.items():
+        if target in COMPETENCIES:
+            display_map[alias] = COMPETENCIES[target]
+    return display_map
+
+def merge_scores_to_current_model(raw_scores: dict) -> dict:
+    """
+    Приводит сохранённые результаты (в том числе старого формата) к текущей модели компетенций.
+    Для объединённых компетенций используется среднее значение.
+    """
+    aggregated = {key: [] for key in COMPETENCIES.keys()}
+    for key, value in raw_scores.items():
+        resolved = resolve_competency_key(key)
+        if resolved in aggregated:
+            aggregated[resolved].append(value)
+    normalized = {}
+    for key, values in aggregated.items():
+        if values:
+            normalized[key] = round(sum(values) / len(values), 1)
+        else:
+            normalized[key] = 0
+    return normalized
 
 def calculate_competency_profile(answers):
     """
     Алгоритм построения личностной карты компетенций
     на основе методики оценки надпрофессиональных компетенций
+    
+    Психометрический подход:
+    - Нормализация результатов к шкале 0-100%
+    - Максимальный балл за вопрос: 4 (шкала 1-4)
+    - Для каждой компетенции: (сумма_баллов / (количество_вопросов * 4)) * 100
     """
     scores = {comp: 0 for comp in COMPETENCIES.keys()}
     max_scores = {comp: 0 for comp in COMPETENCIES.keys()}
@@ -115,15 +136,18 @@ def calculate_competency_profile(answers):
     for answer in answers:
         question = Question.query.get(answer['question_id'])
         if question:
-            option = QuestionOption.query.get(answer['option_id'])
-            if option:
-                scores[question.competency] += option.score
-                max_scores[question.competency] += 5  # Максимальный балл за вопрос
+            resolved_key = resolve_competency_key(question.competency)
+            if resolved_key in COMPETENCIES:
+                option = QuestionOption.query.get(answer['option_id'])
+                if option:
+                    scores[resolved_key] += option.score
+                    max_scores[resolved_key] += 4  # Максимальный балл за вопрос (шкала 1-4)
     
-    # Нормализация (в процентах)
+    # Нормализация (в процентах) - психометрический подход
     normalized_scores = {}
     for comp in COMPETENCIES.keys():
         if max_scores[comp] > 0:
+            # Формула: (набранные_баллы / максимально_возможные_баллы) * 100
             normalized_scores[comp] = round((scores[comp] / max_scores[comp]) * 100, 1)
         else:
             normalized_scores[comp] = 0
@@ -134,7 +158,15 @@ def generate_recommendations(scores):
     """
     Алгоритм формирования персонализированных рекомендаций
     на основе профиля надпрофессиональных компетенций
+    
+    Психологическая методика:
+    - Сильные стороны: топ-3 компетенции с баллом >= 70%
+    - Зоны развития: компетенции с баллом < 60%
+    - Карьерные траектории: на основе топ-3 компетенций
+    - Персонализированные курсы и активности для компетенций < 70%
     """
+    normalized_scores = merge_scores_to_current_model(scores)
+
     recommendations = {
         'strong_competencies': [],
         'development_areas': [],
@@ -143,10 +175,11 @@ def generate_recommendations(scores):
         'activities': []
     }
     
-    # Сортировка компетенций по уровню
-    sorted_comps = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    # Сортировка компетенций по уровню (только те, для которых есть вопросы)
+    sorted_comps = sorted([(comp, score) for comp, score in normalized_scores.items() if score > 0],
+                         key=lambda x: x[1], reverse=True)
     
-    # Сильные стороны (топ-3)
+    # Сильные стороны (топ-3, балл >= 70%)
     for comp, score in sorted_comps[:3]:
         if score >= 70:
             recommendations['strong_competencies'].append({
@@ -155,7 +188,7 @@ def generate_recommendations(scores):
                 'description': COMPETENCIES[comp]['description']
             })
     
-    # Области развития (низкие баллы)
+    # Области развития (низкие баллы, < 60%)
     for comp, score in sorted_comps:
         if score < 60:
             recommendations['development_areas'].append({
@@ -167,62 +200,43 @@ def generate_recommendations(scores):
     # Рекомендации по карьере (на основе топ-3 компетенций)
     career_fields = set()
     for comp, score in sorted_comps[:3]:
-        career_fields.update(COMPETENCIES[comp]['career_fields'])
-    recommendations['career_paths'] = list(career_fields)[:6]
+        if comp in COMPETENCIES:
+            career_fields.update(COMPETENCIES[comp]['career_fields'])
+    recommendations['career_paths'] = list(career_fields)[:8]
     
-    # Рекомендации по развитию
+    # Рекомендации по развитию (объединены из влитых компетенций)
     development_map = {
         'critical_thinking': {
-            'courses': ['Логика и аргументация', 'Анализ данных', 'Системное мышление'],
-            'activities': ['Решение кейсов', 'Участие в дискуссионных клубах', 'Чтение научной литературы']
+            'courses': ['Логика и аргументация', 'Анализ данных', 'Системное мышление', 'Алгоритмы', 'Системный анализ', 'Цифровые инструменты', 'Data Science', 'Дизайн-мышление', 'ТРИЗ'],
+            'activities': ['Решение кейсов', 'Участие в дискуссионных клубах', 'Чтение научной литературы', 'Олимпиады', 'Кейс-чемпионаты', 'Научные проекты', 'Онлайн-курсы', 'IT-проекты', 'Хакатоны', 'Творческие проекты']
         },
         'communication': {
-            'courses': ['Публичные выступления', 'Деловое общение', 'Переговоры'],
-            'activities': ['Дебаты', 'Волонтёрство', 'Студенческие конференции']
-        },
-        'creativity': {
-            'courses': ['Дизайн-мышление', 'ТРИЗ', 'Креативные индустрии'],
-            'activities': ['Хакатоны', 'Творческие проекты', 'Мозговые штурмы']
+            'courses': ['Публичные выступления', 'Деловое общение', 'Переговоры', 'Маркетинг и реклама'],
+            'activities': ['Дебаты', 'Волонтёрство', 'Студенческие конференции', 'Творческие проекты']
         },
         'emotional_intelligence': {
-            'courses': ['Психология общения', 'Управление конфликтами', 'Эмпатия'],
-            'activities': ['Тренинги по EQ', 'Групповая терапия', 'Менторство']
-        },
-        'adaptability': {
-            'courses': ['Управление изменениями', 'Agile', 'Стресс-менеджмент'],
-            'activities': ['Работа в стартапах', 'Путешествия', 'Новые хобби']
+            'courses': ['Психология общения', 'Управление конфликтами', 'Эмпатия', 'Майндфулнесс', 'Стресс-менеджмент', 'Самоорганизация', 'Управление изменениями', 'Agile'],
+            'activities': ['Тренинги по EQ', 'Групповая терапия', 'Менторство', 'Медитация', 'Спорт', 'Йога', 'Дыхательные практики', 'Работа в стартапах', 'Новые хобби']
         },
         'time_management': {
-            'courses': ['Тайм-менеджмент', 'GTD', 'Продуктивность'],
-            'activities': ['Планирование дня', 'Pomodoro техника', 'Ведение дневника']
+            'courses': ['Тайм-менеджмент', 'GTD', 'Продуктивность', 'Управление изменениями', 'Agile'],
+            'activities': ['Планирование дня', 'Pomodoro техника', 'Ведение дневника', 'Путешествия', 'Новые хобби']
         },
         'teamwork': {
             'courses': ['Командная работа', 'Управление проектами', 'Фасилитация'],
             'activities': ['Групповые проекты', 'Спортивные команды', 'Волонтёрство']
-        },
-        'problem_solving': {
-            'courses': ['Алгоритмы', 'Системный анализ', 'Инженерное мышление'],
-            'activities': ['Олимпиады', 'Кейс-чемпионаты', 'Научные проекты']
-        },
-        'self_regulation': {
-            'courses': ['Майндфулнесс', 'Стресс-менеджмент', 'Самоорганизация'],
-            'activities': ['Медитация', 'Спорт', 'Йога', 'Дыхательные практики']
-        },
-        'digital_literacy': {
-            'courses': ['Цифровые инструменты', 'Data Science', 'Кибербезопасность'],
-            'activities': ['Онлайн-курсы', 'IT-проекты', 'Сертификации']
         }
     }
     
-    # Персонализированные рекомендации
+    # Персонализированные рекомендации (для компетенций < 70%)
     for comp, score in sorted_comps:
         if score < 70 and comp in development_map:
-            recommendations['courses'].extend(development_map[comp]['courses'][:2])
-            recommendations['activities'].extend(development_map[comp]['activities'][:2])
+            recommendations['courses'].extend(development_map[comp]['courses'][:3])
+            recommendations['activities'].extend(development_map[comp]['activities'][:3])
     
-    # Удаление дубликатов
-    recommendations['courses'] = list(dict.fromkeys(recommendations['courses']))[:5]
-    recommendations['activities'] = list(dict.fromkeys(recommendations['activities']))[:5]
+    # Удаление дубликатов с сохранением порядка
+    recommendations['courses'] = list(dict.fromkeys(recommendations['courses']))[:6]
+    recommendations['activities'] = list(dict.fromkeys(recommendations['activities']))[:6]
     
     return recommendations
 
@@ -294,7 +308,14 @@ def start_test():
     questions = Question.query.filter_by(active=True).order_by(Question.order_num).all()
     if not questions:
         return render_template('error.html', message='Тест пока не настроен. Обратитесь к администратору.')
-    return render_template('test.html', questions=questions, competencies=COMPETENCIES)
+    competency_display_map = get_competency_display_map()
+    for question in questions:
+        question.display_competency = resolve_competency_key(question.competency)
+    return render_template(
+        'test.html',
+        questions=questions,
+        competency_display_map=competency_display_map
+    )
 
 @app.route('/test/submit', methods=['POST'])
 def submit_test():
@@ -339,7 +360,8 @@ def view_results(result_id):
     if result.user_id != session['user_id'] and session['role'] not in ['teacher', 'admin']:
         return "Доступ запрещён", 403
     
-    scores = json.loads(result.scores)
+    raw_scores = json.loads(result.scores)
+    scores = merge_scores_to_current_model(raw_scores)
     recommendations = json.loads(result.recommendations)
     
     return render_template('results.html',
@@ -357,10 +379,34 @@ def teacher_dashboard():
     all_results = TestResult.query.all()
     stats = calculate_aggregate_stats(all_results)
     
-    # Открытые профили студентов
-    public_students = User.query.filter_by(role='student', profile_visibility=True).all()
+    # Профили всех студентов
+    students = User.query.filter_by(role='student').all()
+    student_profiles = []
+    for student in students:
+        ordered_results = sorted(
+            student.test_results,
+            key=lambda r: r.test_date or datetime.min,
+            reverse=True
+        )
+        last_result = ordered_results[0] if ordered_results else None
+        student_profiles.append({
+            'id': student.id,
+            'display_name': student.full_name or student.username,
+            'username': student.username,
+            'faculty': student.faculty,
+            'course': student.course,
+            'profile_visibility': student.profile_visibility,
+            'results_count': len(ordered_results),
+            'last_result_id': last_result.id if last_result else None,
+            'last_result_date': last_result.test_date if last_result else None
+        })
     
-    return render_template('teacher_dashboard.html', stats=stats, students=public_students, competencies=COMPETENCIES)
+    return render_template(
+        'teacher_dashboard.html',
+        stats=stats,
+        competencies=COMPETENCIES,
+        student_profiles=student_profiles
+    )
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -374,8 +420,36 @@ def admin_dashboard():
         'total_tests': TestResult.query.count(),
         'total_questions': Question.query.filter_by(active=True).count()
     }
+    competency_display_map = get_competency_display_map()
+    questions_payload = []
+    for question in questions:
+        resolved_key = resolve_competency_key(question.competency)
+        question.display_competency = resolved_key
+        questions_payload.append({
+            'id': question.id,
+            'text': question.text,
+            'competency': question.competency,
+            'resolved_competency': resolved_key,
+            'category': question.category,
+            'order_num': question.order_num,
+            'active': question.active,
+            'options': [{
+                'id': option.id,
+                'text': option.text,
+                'score': option.score,
+                'order_num': option.order_num
+            } for option in sorted(question.options, key=lambda o: o.order_num or 0)]
+        })
     
-    return render_template('admin_dashboard.html', users=users, questions=questions, stats=stats, competencies=COMPETENCIES)
+    return render_template(
+        'admin_dashboard.html',
+        users=users,
+        questions=questions,
+        stats=stats,
+        competencies=COMPETENCIES,
+        competency_display_map=competency_display_map,
+        questions_data=questions_payload
+    )
 
 @app.route('/admin/questions', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_questions():
@@ -412,6 +486,7 @@ def manage_questions():
             'id': q.id,
             'text': q.text,
             'competency': q.competency,
+            'resolved_competency': resolve_competency_key(q.competency),
             'category': q.category,
             'order_num': q.order_num,
             'active': q.active,
@@ -432,6 +507,16 @@ def manage_questions():
             question.category = data.get('category', question.category)
             question.order_num = data.get('order_num', question.order_num)
             question.active = data.get('active', question.active)
+            if 'options' in data:
+                QuestionOption.query.filter_by(question_id=question.id).delete(synchronize_session=False)
+                for idx, opt in enumerate(data['options'], start=1):
+                    option = QuestionOption(
+                        question_id=question.id,
+                        text=opt['text'],
+                        score=opt['score'],
+                        order_num=opt.get('order_num') or idx
+                    )
+                    db.session.add(option)
             db.session.commit()
             return jsonify({'success': True})
         return jsonify({'success': False, 'message': 'Вопрос не найден'})
@@ -464,8 +549,9 @@ def calculate_aggregate_stats(results):
     for result in results:
         try:
             scores = json.loads(result.scores)
-            for comp, score in scores.items():
-                if comp in all_scores:
+            merged_scores = merge_scores_to_current_model(scores)
+            for comp, score in merged_scores.items():
+                if comp in all_scores and score is not None:
                     all_scores[comp].append(score)
         except:
             continue
