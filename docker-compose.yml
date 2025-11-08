@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    container_name: competency-assessment-web
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:////app/data/competencies.db
+    restart: unless-stopped
