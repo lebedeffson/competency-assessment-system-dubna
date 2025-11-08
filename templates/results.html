@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты тестирования{% endblock %}
+
+{% block extra_css %}
+<style>
+    .results-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    .results-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        background: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    .results-header h1 {
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .results-header p {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    .chart-container h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 1.75rem;
+    }
+    .radar-chart {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .competency-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .competency-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .competency-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-color, #4f46e5);
+    }
+    .competency-name {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    .score-bar {
+        height: 36px;
+        background: #f1f5f9;
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+        position: relative;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .score-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .score-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .competency-card p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-top: 0.5rem;
+        line-height: 1.5;
+    }
+    .recommendations-section {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    .recommendations-section h2 {
+        color: #1e293b;
+        font-weight: 800;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .recommendations-section h3 {
+        margin-top: 2rem;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .recommendation-item {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--primary-color, #4f46e5);
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    .recommendation-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .recommendation-item strong {
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    .recommendation-item p {
+        margin-top: 0.5rem;
+        color: #64748b;
+        line-height: 1.6;
+    }
+    .career-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+    .career-tag {
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 25px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s;
+    }
+    .career-tag:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px -1px rgba(102, 126, 234, 0.4);
+    }
+    .recommendations-section ul {
+        list-style: none;
+        padding: 0;
+    }
+    .recommendations-section ul li {
+        padding: 0.75rem 0;
+        padding-left: 1.5rem;
+        position: relative;
+        color: #1e293b;
+    }
+    .recommendations-section ul li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: #10b981;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+</style>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-header">
+        <h1>Ваши результаты тестирования</h1>
+        <p>Дата прохождения: {{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</p>
+    </div>
+    
+    <div class="chart-container">
+        <h2 style="text-align: center; margin-bottom: 20px;">Личностная карта компетенций</h2>
+        <div id="radarChart" class="radar-chart"></div>
+    </div>
+    
+    <div class="competency-grid">
+        {% for comp_key, comp_data in competencies.items() %}
+        <div class="competency-card">
+            <div class="competency-name">{{ comp_data.name }}</div>
+            <div class="score-bar">
+                <div class="score-fill" style="width: {{ scores[comp_key] }}%">
+                    {{ scores[comp_key] }}%
+                </div>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">{{ comp_data.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="recommendations-section">
+        <h2>Персональные рекомендации</h2>
+        
+        {% if recommendations.strong_competencies %}
+        <h3 style="color: #27ae60; margin-top: 20px;">Ваши сильные стороны</h3>
+        {% for comp in recommendations.strong_competencies %}
+        <div class="recommendation-item">
+            <strong>{{ comp.name }}</strong> ({{ comp.score }}%)
+            <p style="margin-top: 5px; color: #666;">{{ comp.description }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if recommendations.development_areas %}
+        <h3 style="color: #e74c3c; margin-top: 20px;">Области для развития</h3>
+        {% for comp in recommendations.development_areas %}
+        <div class="recommendation-item">
+            <strong>{{ comp.name }}</strong> ({{ comp.score }}%)
+            <p style="margin-top: 5px; color: #666;">{{ comp.description }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if recommendations.career_paths %}
+        <h3 style="color: var(--primary-color, #4f46e5); margin-top: 20px;">Рекомендуемые профессиональные направления</h3>
+        <div class="career-tags">
+            {% for career in recommendations.career_paths %}
+            <span class="career-tag">{{ career }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if recommendations.courses %}
+        <h3 style="margin-top: 20px;">Рекомендуемые курсы</h3>
+        <ul>
+            {% for course in recommendations.courses %}
+            <li>{{ course }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if recommendations.activities %}
+        <h3 style="margin-top: 20px;">Рекомендуемые активности</h3>
+        <ul>
+            {% for activity in recommendations.activities %}
+            <li>{{ activity }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Вернуться в профиль</a>
+        <a href="{{ url_for('start_test') }}" class="btn btn-secondary">Пройти тест снова</a>
+    </div>
+</div>
+
+<script>
+// Создание радарной диаграммы
+const competencies = {{ competencies|tojson|safe }};
+const scores = {{ scores|tojson|safe }};
+
+const labels = [];
+const values = [];
+const descriptions = [];
+
+Object.keys(competencies).forEach(key => {
+    labels.push(competencies[key].name);
+    values.push(scores[key] || 0);
+    descriptions.push(competencies[key].description);
+});
+
+const data = [{
+    type: 'scatterpolar',
+    r: values,
+    theta: labels,
+    fill: 'toself',
+    name: 'Ваш профиль',
+    line: { color: 'var(--primary-color, #4f46e5)' },
+    fillcolor: 'rgba(102, 126, 234, 0.2)'
+}];
+
+const layout = {
+    polar: {
+        radialaxis: {
+            visible: true,
+            range: [0, 100],
+            tickfont: { size: 10 }
+        },
+        angularaxis: {
+            tickfont: { size: 11 }
+        }
+    },
+    showlegend: false,
+    height: 500,
+    margin: { l: 100, r: 100, t: 50, b: 50 }
+};
+
+Plotly.newPlot('radarChart', data, layout, {responsive: true});
+</script>
+{% endblock %}
+

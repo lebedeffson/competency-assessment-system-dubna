@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Мой профиль{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Мой профиль</h1>
+        <div class="user-info">
+            <p><strong>Имя:</strong> {{ user.full_name or user.username }}</p>
+            {% if user.faculty %}<p><strong>Факультет:</strong> {{ user.faculty }}</p>{% endif %}
+            {% if user.course %}<p><strong>Курс:</strong> {{ user.course }}</p>{% endif %}
+        </div>
+    </div>
+    
+    <div class="dashboard-actions">
+        <a href="{{ url_for('start_test') }}" class="btn btn-primary">Пройти тест</a>
+        <button id="toggleVisibility" class="btn btn-secondary">
+            {% if user.profile_visibility %}Скрыть профиль{% else %}Открыть профиль{% endif %}
+        </button>
+    </div>
+    
+    <div class="results-list">
+        <h2>История тестирований</h2>
+        {% if results %}
+            {% for result in results %}
+            <div class="result-card">
+                <div class="result-header">
+                    <h3>Тестирование от {{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</h3>
+                    <a href="{{ url_for('view_results', result_id=result.id) }}" class="btn btn-primary btn-small">Просмотреть результаты</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 40px;">
+                Вы ещё не проходили тестирование. <a href="{{ url_for('start_test') }}">Начните прямо сейчас!</a>
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.getElementById('toggleVisibility').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/toggle_visibility', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+</script>
+{% endblock %}
+

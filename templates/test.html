@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Тестирование компетенций{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    .test-container h1 {
+        text-align: center;
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .test-container > p {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    .progress-section {
+        margin-bottom: 2.5rem;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    .progress-text {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .progress-bar {
+        height: 12px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+        position: relative;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .question-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        display: none;
+        animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .question-card.active {
+        display: block;
+    }
+    .question-header {
+        margin-bottom: 1.5rem;
+    }
+    .question-number {
+        color: var(--primary-color, #4f46e5);
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .question-competency {
+        display: inline-block;
+        background: linear-gradient(135deg, #e8edff 0%, #f0f4ff 100%);
+        color: var(--primary-color, #4f46e5);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .question-text {
+        font-size: 1.5rem;
+        color: #1e293b;
+        margin: 1.5rem 0;
+        font-weight: 600;
+        line-height: 1.6;
+    }
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .option-label {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .option-label::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        transform: scaleY(0);
+        transition: transform 0.3s;
+    }
+    .option-label:hover {
+        border-color: var(--primary-color, #4f46e5);
+        background: #f0f4ff;
+        transform: translateX(5px);
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.2);
+    }
+    .option-label:hover::before {
+        transform: scaleY(1);
+    }
+    .option-label input[type="radio"] {
+        margin-right: 1rem;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        accent-color: var(--primary-color, #4f46e5);
+    }
+    .option-label:has(input:checked) {
+        border-color: var(--primary-color, #4f46e5);
+        background: linear-gradient(135deg, #e8edff 0%, #f0f4ff 100%);
+        font-weight: 600;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.2);
+    }
+    .option-label:has(input:checked)::before {
+        transform: scaleY(1);
+    }
+    .navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2.5rem;
+        gap: 1rem;
+    }
+    .completion-screen {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .completion-screen h2 {
+        background: linear-gradient(135deg, var(--primary-color, #4f46e5) 0%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    .loader {
+        border: 4px solid #f1f5f9;
+        border-top: 4px solid var(--primary-color, #4f46e5);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin: 2rem auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="test-container">
+    <h1>Диагностика надпрофессиональных компетенций</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">Университет "Дубна" | Система оценки soft skills</p>
+    
+    <div id="testSection">
+        <div class="progress-section">
+            <div class="progress-text" id="progressText" style="text-align: center; margin-bottom: 10px; color: #666;">Вопрос 0 из {{ questions|length }}</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <form id="testForm">
+            {% for question in questions %}
+            <div class="question-card" data-question-id="{{ question.id }}" {% if loop.first %}class="active"{% endif %}>
+                <div class="question-header">
+                    <div class="question-number">Вопрос {{ loop.index }} / {{ questions|length }}</div>
+                    <div class="question-competency">{{ competencies[question.competency]['name'] }}</div>
+                </div>
+                <div class="question-text">{{ question.text }}</div>
+                <div class="options">
+                    {% for option in question.options %}
+                    <label class="option-label">
+                        <input type="radio" name="q{{ question.id }}" value="{{ option.id }}" data-score="{{ option.score }}">
+                        <span>{{ option.text }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display:none;">← Назад</button>
+                <button type="button" class="btn btn-primary" id="nextBtn">Далее →</button>
+                <button type="button" class="btn btn-primary" id="submitBtn" style="display:none;">Завершить тестирование</button>
+            </div>
+        </form>
+    </div>
+    
+    <div id="completionSection" style="display:none;">
+        <div class="completion-screen">
+            <h2>Обработка результатов...</h2>
+            <div class="loader"></div>
+            <p>Формирование вашей личностной карты компетенций</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const questions = document.querySelectorAll('.question-card');
+const totalQuestions = questions.length;
+let currentQuestion = 0;
+let answers = {};
+
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+
+function updateProgress() {
+    const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+    progressFill.style.width = progress + '%';
+    progressText.textContent = `Вопрос ${currentQuestion + 1} из ${totalQuestions}`;
+}
+
+function showQuestion(index) {
+    questions.forEach((q, i) => {
+        q.classList.toggle('active', i === index);
+    });
+    
+    prevBtn.style.display = index > 0 ? 'inline-block' : 'none';
+    
+    if (index === totalQuestions - 1) {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+    } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+    }
+    
+    updateProgress();
+}
+
+nextBtn.addEventListener('click', () => {
+    const currentQuestionCard = questions[currentQuestion];
+    const questionId = currentQuestionCard.dataset.questionId;
+    const selected = currentQuestionCard.querySelector('input[type="radio"]:checked');
+    
+    if (!selected) {
+        alert('Пожалуйста, выберите ответ перед переходом к следующему вопросу');
+        return;
+    }
+    
+    answers[questionId] = {
+        question_id: parseInt(questionId),
+        option_id: parseInt(selected.value),
+        score: parseInt(selected.dataset.score)
+    };
+    
+    if (currentQuestion < totalQuestions - 1) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+    }
+});
+
+prevBtn.addEventListener('click', () => {
+    if (currentQuestion > 0) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+    }
+});
+
+submitBtn.addEventListener('click', async () => {
+    const currentQuestionCard = questions[currentQuestion];
+    const questionId = currentQuestionCard.dataset.questionId;
+    const selected = currentQuestionCard.querySelector('input[type="radio"]:checked');
+    
+    if (!selected) {
+        alert('Пожалуйста, ответьте на последний вопрос');
+        return;
+    }
+    
+    answers[questionId] = {
+        question_id: parseInt(questionId),
+        option_id: parseInt(selected.value),
+        score: parseInt(selected.dataset.score)
+    };
+    
+    // Показать экран обработки
+    document.getElementById('testSection').style.display = 'none';
+    document.getElementById('completionSection').style.display = 'block';
+    
+    // Отправить результаты
+    try {
+        const response = await fetch('/test/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({answers: Object.values(answers)})
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.href = '/results/' + result.result_id;
+        } else {
+            alert('Ошибка при сохранении результатов');
+            document.getElementById('testSection').style.display = 'block';
+            document.getElementById('completionSection').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Произошла ошибка при отправке результатов');
+        document.getElementById('testSection').style.display = 'block';
+        document.getElementById('completionSection').style.display = 'none';
+    }
+});
+
+// Инициализация
+showQuestion(0);
+</script>
+{% endblock %}
+

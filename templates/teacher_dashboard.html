@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд преподавателя{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Дашборд преподавателя</h1>
+    
+    <div class="stats-section">
+        <h2>Обезличенная статистика</h2>
+        <div class="stats-grid">
+            {% for comp_key, comp_data in competencies.items() %}
+            {% if stats.get(comp_key) %}
+            <div class="stat-card">
+                <h3>{{ comp_data.name }}</h3>
+                <div class="stat-values">
+                    <p><strong>Среднее:</strong> {{ stats[comp_key].mean }}%</p>
+                    <p><strong>Медиана:</strong> {{ stats[comp_key].median }}%</p>
+                    <p><strong>Мин/Макс:</strong> {{ stats[comp_key].min }}% / {{ stats[comp_key].max }}%</p>
+                    <p><strong>Количество тестов:</strong> {{ stats[comp_key].count }}</p>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="students-section">
+        <h2>Открытые профили студентов</h2>
+        {% if students %}
+            <div class="students-grid">
+                {% for student in students %}
+                <div class="student-card">
+                    <h3>{{ student.full_name or student.username }}</h3>
+                    {% if student.faculty %}<p><strong>Факультет:</strong> {{ student.faculty }}</p>{% endif %}
+                    {% if student.course %}<p><strong>Курс:</strong> {{ student.course }}</p>{% endif %}
+                    {% if student.test_results %}
+                        <p><strong>Тестов пройдено:</strong> {{ student.test_results|length }}</p>
+                        {% if student.test_results|length > 0 %}
+                            <a href="{{ url_for('view_results', result_id=student.test_results[0].id) }}" class="btn btn-primary btn-small">Посмотреть последний результат</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 40px;">
+                Нет студентов с открытыми профилями
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
